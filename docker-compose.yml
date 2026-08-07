@@ -1,0 +1,53 @@
+services:
+  afran-allocation-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: afran-allocation-api:1.0.0
+    container_name: afran-allocation-api
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      DATABASE_URL: sqlite:////data/afran.db
+      DATABASE_AUTO_CREATE: "false"
+      ENVIRONMENT: production
+      CRAWL_INTERVAL: ${CRAWL_INTERVAL:-86400}
+      SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+      CRAWL_ON_STARTUP: ${CRAWL_ON_STARTUP:-false}
+      FIPIRAN_URL: ${FIPIRAN_URL:-https://www.fipiran.com}
+      HTTP_TIMEOUT: ${HTTP_TIMEOUT:-30}
+      HTTP_RETRIES: ${HTTP_RETRIES:-3}
+      CRAWL_MAX_RPS: ${CRAWL_MAX_RPS:-2}
+      CRAWL_DETAIL_CONCURRENCY: ${CRAWL_DETAIL_CONCURRENCY:-4}
+      CRAWL_FETCH_PORTFOLIO_HISTORY: ${CRAWL_FETCH_PORTFOLIO_HISTORY:-true}
+      PLAYWRIGHT_ENABLED: ${PLAYWRIGHT_ENABLED:-true}
+      ALLOCATION_BENCHMARK_BM: ${ALLOCATION_BENCHMARK_BM:-2.99}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-1}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-180}
+      GUNICORN_GRACEFUL_TIMEOUT: ${GUNICORN_GRACEFUL_TIMEOUT:-30}
+      CRAWL_API_KEY: ${CRAWL_API_KEY:-}
+    volumes:
+      - afran-allocation-data:/data
+    networks:
+      - afran-allocation-network
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:80/health', timeout=4)
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  afran-allocation-data:
+    name: afran-allocation-data
+
+networks:
+  afran-allocation-network:
+    name: afran-allocation-network
+    driver: bridge
