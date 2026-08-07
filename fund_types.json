@@ -1,0 +1,6 @@
+{
+  "status": 200,
+  "items": [
+    {"fundType": 1, "name": "در سهام", "isActive": true}
+  ]
+}

@@ -1,0 +1,5 @@
+Production database migrations for Afran Allocation.
+
+Run from the repository root:
+
+    python -m alembic -c alembic.ini upgrade head

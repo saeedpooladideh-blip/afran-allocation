@@ -1,0 +1,7 @@
+{
+  "status": 200,
+  "items": [
+    {"date": "2026-08-05", "netAsset": 9800000000, "unitCount": 945000, "unitsSubDAY": 1300, "unitsRedDAY": 800},
+    {"date": "2026-08-06", "netAsset": 9876543210, "unitCount": 950000, "unitsSubDAY": 1700, "unitsRedDAY": 900}
+  ]
+}

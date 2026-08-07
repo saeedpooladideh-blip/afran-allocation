@@ -1,0 +1,20 @@
+[
+  {
+    "date": "2026-08-04T12:00:00Z",
+    "fiveBest": 42.1,
+    "stock": 89.8,
+    "bond": 2.1,
+    "cash": 1.2,
+    "deposit": 4.0,
+    "other": 2.9
+  },
+  {
+    "date": "2026-08-06T12:00:00Z",
+    "fiveBest": 43.0,
+    "stock": 91.4,
+    "bond": 1.2,
+    "cash": 0.8,
+    "deposit": 2.4,
+    "other": 1.6
+  }
+]
