@@ -16,33 +16,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Arvan Registry
+      - name: Login Arvan Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Build and Push Backend
+      - name: Build Backend Image
         uses: docker/build-push-action@v6
         with:
           context: .
-          dockerfile: Dockerfile.backend
-          target: backend-runtime
+          file: ./Dockerfile.backend
           push: true
           tags: ${{ env.API_IMAGE }}
 
-      - name: Build and Push Frontend
+      - name: Build Frontend Image
         uses: docker/build-push-action@v6
         with:
           context: .
-          dockerfile: Dockerfile
-          target: runtime
+          file: ./Dockerfile
           push: true
           tags: ${{ env.FRONTEND_IMAGE }}
