@@ -1,0 +1,17 @@
+FROM python:3.12-slim AS backend-runtime
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+COPY backend-start.sh .
+
+RUN chmod +x backend-start.sh
+
+EXPOSE 80
+
+CMD ["./backend-start.sh"]
