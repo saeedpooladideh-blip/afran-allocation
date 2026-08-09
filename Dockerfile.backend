@@ -2,13 +2,20 @@ FROM python:3.12-slim AS backend-runtime
 
 WORKDIR /app
 
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# جلوگیری از تداخل نام‌های داخلی پایتون
+RUN rm -f /app/types.py /app/enum.py /app/re.py
+
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
-
-COPY backend-start.sh .
+# فقط فایل‌های لازم backend
+COPY *.py ./
+COPY app ./app
+COPY backend-start.sh ./
 
 RUN chmod +x backend-start.sh
 
