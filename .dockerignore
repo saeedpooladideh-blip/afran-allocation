@@ -1,12 +1,43 @@
+# Git
 .git
+.gitignore
+
+# Environment
 .env
 .env.*
 !.env.example
-.next
-.wrangler
-.sites-runtime
-dist
+
+# Node
 node_modules
 npm-debug.log*
+.next
+dist
+
+# Python cache
+__pycache__
+*.py[cod]
+*.pyo
+*.pyd
+
+# Python virtual env
+.venv
+venv
+env
+
+# Docker files
 Dockerfile*
-README.md
+docker-compose*
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IMPORTANT:
+# prevent Python stdlib conflict
+types.py
+**/types.py
+app/types.py
+*/types.py
