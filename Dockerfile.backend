@@ -2,11 +2,8 @@ FROM python:3.12-slim AS backend-runtime
 
 WORKDIR /app
 
-# جلوگیری از باگ های cache و لاگ
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-
-# جلوگیری از conflict با ماژول های داخلی Python
 ENV PYTHONPATH=/app
 
 COPY requirements.txt .
@@ -14,21 +11,18 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-
 COPY . .
 
-# اگر فایل مشکل ساز types.py وجود داشت حذف شود
+# remove python internal module conflict
 RUN rm -f /app/types.py
 
-
-# بررسی اولیه import پایتون
+# verify python environment
 RUN python - <<'PY'
 import sys
 import types
 print("Python OK")
 print(types.__file__)
 PY
-
 
 RUN chmod +x backend-start.sh
 
