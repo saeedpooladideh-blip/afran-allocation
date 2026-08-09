@@ -13,16 +13,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY . .
 
-# remove python internal module conflict
 RUN rm -f /app/types.py
-
-# verify python environment
-RUN python - <<'PY'
-import sys
-import types
-print("Python OK")
-print(types.__file__)
-PY
 
 RUN chmod +x backend-start.sh
 
