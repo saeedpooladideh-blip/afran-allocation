@@ -1,4 +1,4 @@
-name: Build and Push Afran Images
+name: Build and Push Afran Backend
 
 on:
   workflow_dispatch:
@@ -6,53 +6,145 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: afran-allocation-backend-image
+  cancel-in-progress: false
+
 env:
   REGISTRY: registry-dba221617d-afran-allocation.apps.ir-central1.arvancaas.ir
-
-  API_IMAGE: registry-dba221617d-afran-allocation.apps.ir-central1.arvancaas.ir/afran-allocation-api:1.1.1
-
-  FRONTEND_IMAGE: registry-dba221617d-afran-allocation.apps.ir-central1.arvancaas.ir/afran-allocation-frontend:0.1.0
-
+  API_IMAGE: registry-dba221617d-afran-allocation.apps.ir-central1.arvancaas.ir/afran-allocation-api:1.1.2
 
 jobs:
   build-and-push:
-
+    name: Build and push Backend 1.1.2
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Verify Backend source contract
+        shell: bash
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
 
+          import ast
+          import compileall
+          from pathlib import Path
 
-      - name: Setup Buildx
-        uses: docker/setup-buildx-action@v3
+          required = (
+              Path("backend/Dockerfile"),
+              Path("backend/requirements.txt"),
+              Path("backend/app"),
+              Path("backend/migrations"),
+              Path("backend/scripts"),
+              Path("backend/alembic.ini"),
+              Path("backend/app/crawlers/app_types.py"),
+              Path("backend/app/utils/app_logging.py"),
+          )
+          forbidden = (
+              Path("backend/app/crawlers/types.py"),
+              Path("backend/app/utils/logging.py"),
+          )
 
+          missing = [str(path) for path in required if not path.exists()]
+          conflicts = [str(path) for path in forbidden if path.exists()]
+          if missing or conflicts:
+              raise SystemExit(
+                  f"Backend source contract failed; missing={missing}; conflicts={conflicts}"
+              )
 
-      - name: Login Arvan Registry
-        uses: docker/login-action@v3
+          backend_root = Path("backend")
+          broken_imports: list[tuple[str, int, str]] = []
+
+          for path in backend_root.rglob("*.py"):
+              if "__pycache__" in path.parts:
+                  continue
+
+              tree = ast.parse(
+                  path.read_text(encoding="utf-8"),
+                  filename=str(path),
+              )
+
+              for node in ast.walk(tree):
+                  modules: list[str] = []
+
+                  if isinstance(node, ast.Import):
+                      modules.extend(alias.name for alias in node.names)
+                  elif (
+                      isinstance(node, ast.ImportFrom)
+                      and node.level == 0
+                      and node.module
+                  ):
+                      modules.append(node.module)
+
+                  for module in modules:
+                      if not (
+                          module == "app"
+                          or module.startswith("app.")
+                      ):
+                          continue
+
+                      parts = module.split(".")
+                      module_file = backend_root.joinpath(
+                          *parts
+                      ).with_suffix(".py")
+                      package_file = backend_root.joinpath(
+                          *parts,
+                          "__init__.py",
+                      )
+
+                      if (
+                          not module_file.is_file()
+                          and not package_file.is_file()
+                      ):
+                          broken_imports.append(
+                              (str(path), node.lineno, module)
+                          )
+
+          if broken_imports:
+              raise SystemExit(
+                  f"Broken internal imports: {broken_imports}"
+              )
+
+          if not compileall.compile_dir(
+              "backend",
+              force=True,
+              quiet=2,
+          ):
+              raise SystemExit("Python compile check failed")
+
+          print("Backend source verification: PASS")
+          PY
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to Arvan Container Registry
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-
-      - name: Build Backend
-        uses: docker/build-push-action@v6
+      - name: Build and push Backend image
+        id: backend
+        uses: docker/build-push-action@v7
         with:
-          context: .
-          file: ./Dockerfile.backend
-          target: backend-runtime
+          context: ./backend
+          file: ./backend/Dockerfile
+          platforms: linux/amd64
           push: true
-          no-cache: true
           tags: ${{ env.API_IMAGE }}
 
-
-      - name: Build Frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          no-cache: true
-          tags: ${{ env.FRONTEND_IMAGE }}
+      - name: Publish image digests
+        shell: bash
+        run: |
+          {
+            echo "### Afran Backend image pushed"
+            echo
+            echo "- API: \`${API_IMAGE}\`"
+            echo "  - Digest: \`${{ steps.backend.outputs.digest }}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
