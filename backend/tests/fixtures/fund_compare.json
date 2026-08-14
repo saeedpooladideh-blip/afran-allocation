@@ -1,0 +1,38 @@
+{
+  "status": 200,
+  "pageNumber": 1,
+  "pageSize": 20,
+  "totalCount": 1,
+  "items": [
+    {
+      "regNo": "TEST-1001",
+      "name": "صندوق آزمون یکپارچه",
+      "smallSymbolName": "آزمون",
+      "fundType": 1,
+      "typeOfInvest": "صدور و ابطالی",
+      "date": "2026-08-06T12:00:00Z",
+      "initiationDate": "2020-01-01",
+      "issueNav": 10420,
+      "cancelNav": 10380,
+      "statisticalNav": 10400,
+      "netAsset": 9876543210,
+      "investedUnits": 950000,
+      "dailyEfficiency": 0.21,
+      "weeklyEfficiency": 1.2,
+      "monthlyEfficiency": 3.7,
+      "quarterlyEfficiency": 9.1,
+      "sixMonthEfficiency": 18.4,
+      "annualEfficiency": 37.5,
+      "efficiency": 146.8,
+      "alpha": 0.31,
+      "beta": 0.92,
+      "stock": 91.4,
+      "fundUnit": 2.6,
+      "bond": 1.2,
+      "cash": 0.8,
+      "deposit": 2.4,
+      "other": 1.6,
+      "commodity": 0
+    }
+  ]
+}

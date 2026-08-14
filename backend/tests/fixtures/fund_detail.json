@@ -1,0 +1,14 @@
+{
+  "status": 200,
+  "item": {
+    "regNo": "TEST-1001",
+    "name": "صندوق آزمون یکپارچه",
+    "websiteAddress": "https://example.invalid/fund",
+    "nationalId": "0000000000",
+    "registrationNumber": "TEST-REG",
+    "manager": "مدیر آزمون",
+    "managerSeoRegisterNo": "MGR-1",
+    "executiveManager": "مدیر اجرایی آزمون",
+    "auditor": "حسابرس آزمون"
+  }
+}
