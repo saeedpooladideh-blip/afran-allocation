@@ -1,4 +1,4 @@
-name: Build and Push Afran Backend
+name: Build and Push Afran Frontend
 
 on:
   workflow_dispatch:
@@ -7,144 +7,52 @@ permissions:
   contents: read
 
 concurrency:
-  group: afran-allocation-backend-image
+  group: afran-allocation-frontend-image
   cancel-in-progress: false
 
 env:
   REGISTRY: registry-dba221617d-afran-allocation.apps.ir-central1.arvancaas.ir
-  API_IMAGE: registry-dba221617d-afran-allocation.apps.ir-central1.arvancaas.ir/afran-allocation-api:1.1.2
+  FRONTEND_IMAGE: registry-dba221617d-afran-allocation.apps.ir-central1.arvancaas.ir/afran-allocation-frontend:0.1.0
 
 jobs:
   build-and-push:
-    name: Build and push Backend 1.1.2
+    name: Build and push Frontend 0.1.0
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
-      - name: Verify Backend source contract
-        shell: bash
+      - name: Verify frontend source
         run: |
-          python - <<'PY'
-          from __future__ import annotations
-
-          import ast
-          import compileall
-          from pathlib import Path
-
-          required = (
-              Path("backend/Dockerfile"),
-              Path("backend/requirements.txt"),
-              Path("backend/app"),
-              Path("backend/migrations"),
-              Path("backend/scripts"),
-              Path("backend/alembic.ini"),
-              Path("backend/app/crawlers/app_types.py"),
-              Path("backend/app/utils/app_logging.py"),
-          )
-          forbidden = (
-              Path("backend/app/crawlers/types.py"),
-              Path("backend/app/utils/logging.py"),
-          )
-
-          missing = [str(path) for path in required if not path.exists()]
-          conflicts = [str(path) for path in forbidden if path.exists()]
-          if missing or conflicts:
-              raise SystemExit(
-                  f"Backend source contract failed; missing={missing}; conflicts={conflicts}"
-              )
-
-          backend_root = Path("backend")
-          broken_imports: list[tuple[str, int, str]] = []
-
-          for path in backend_root.rglob("*.py"):
-              if "__pycache__" in path.parts:
-                  continue
-
-              tree = ast.parse(
-                  path.read_text(encoding="utf-8"),
-                  filename=str(path),
-              )
-
-              for node in ast.walk(tree):
-                  modules: list[str] = []
-
-                  if isinstance(node, ast.Import):
-                      modules.extend(alias.name for alias in node.names)
-                  elif (
-                      isinstance(node, ast.ImportFrom)
-                      and node.level == 0
-                      and node.module
-                  ):
-                      modules.append(node.module)
-
-                  for module in modules:
-                      if not (
-                          module == "app"
-                          or module.startswith("app.")
-                      ):
-                          continue
-
-                      parts = module.split(".")
-                      module_file = backend_root.joinpath(
-                          *parts
-                      ).with_suffix(".py")
-                      package_file = backend_root.joinpath(
-                          *parts,
-                          "__init__.py",
-                      )
-
-                      if (
-                          not module_file.is_file()
-                          and not package_file.is_file()
-                      ):
-                          broken_imports.append(
-                              (str(path), node.lineno, module)
-                          )
-
-          if broken_imports:
-              raise SystemExit(
-                  f"Broken internal imports: {broken_imports}"
-              )
-
-          if not compileall.compile_dir(
-              "backend",
-              force=True,
-              quiet=2,
-          ):
-              raise SystemExit("Python compile check failed")
-
-          print("Backend source verification: PASS")
-          PY
+          test -f frontend/package.json
+          test -f Dockerfile.frontend
+          echo "Frontend source verification: PASS"
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@v3
 
-      - name: Log in to Arvan Container Registry
-        uses: docker/login-action@v4
+      - name: Login to Arvan Container Registry
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Build and push Backend image
-        id: backend
-        uses: docker/build-push-action@v7
+      - name: Build and push Frontend image
+        id: frontend
+        uses: docker/build-push-action@v6
         with:
-          context: ./backend
-          file: ./backend/Dockerfile
+          context: .
+          file: ./Dockerfile.frontend
           platforms: linux/amd64
           push: true
-          tags: ${{ env.API_IMAGE }}
+          tags: ${{ env.FRONTEND_IMAGE }}
 
-      - name: Publish image digests
-        shell: bash
+      - name: Publish image digest
         run: |
-          {
-            echo "### Afran Backend image pushed"
-            echo
-            echo "- API: \`${API_IMAGE}\`"
-            echo "  - Digest: \`${{ steps.backend.outputs.digest }}\`"
-          } >> "${GITHUB_STEP_SUMMARY}"
+          echo "Frontend image pushed:"
+          echo "${{ env.FRONTEND_IMAGE }}"
+          echo "Digest:"
+          echo "${{ steps.frontend.outputs.digest }}"
