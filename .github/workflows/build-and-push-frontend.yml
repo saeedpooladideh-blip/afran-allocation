@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -28,7 +29,7 @@ jobs:
       - name: Build and push Frontend image
         uses: docker/build-push-action@v6
         with:
-          context: ./frontend
+          context: .
           file: ./Dockerfile.frontend
           push: true
           tags: |
